@@ -3,6 +3,7 @@ export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
 import { supabase } from '../../lib/supabase';
+import { processContent, extractFAQs, suggestInternalLinks, countWords } from '../../lib/post-utils.js';
 
 const { slug } = Astro.params;
 
@@ -30,6 +31,18 @@ try {
             .order('created_at', { ascending: false })
             .limit(3);
         relatedPosts = related || [];
+
+        // Fallback: si no hay relacionados de la misma categoría, traer últimos 3
+        if (!relatedPosts.length) {
+            const { data: fallback } = await supabase
+                .from('posts')
+                .select('id, title, slug, description, image_url, category, reading_time')
+                .eq('published', true)
+                .neq('id', post.id)
+                .order('created_at', { ascending: false })
+                .limit(3);
+            relatedPosts = fallback || [];
+        }
     }
 } catch (e) {
     return Astro.redirect('/blog');
@@ -37,18 +50,32 @@ try {
 
 if (!post) return Astro.redirect('/blog');
 
+const { html: processedHtml, toc } = processContent(post.content || '');
+const faqs = extractFAQs(post.content || '');
+const internalLinks = suggestInternalLinks(post);
+const wordCount = countWords(post.content);
 const fullUrl = `https://limpiezastorrenueva.com/post/${post.slug}`;
-const readingTime = post.reading_time || Math.max(3, Math.ceil((post.content || '').split(/\s+/).length / 200));
+const readingTime = post.reading_time || Math.max(3, Math.ceil(wordCount / 220));
 
 const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
     "headline": post.title,
+    "alternativeHeadline": post.meta_title || post.title,
     "description": post.meta_description || post.description,
-    "image": post.image_url || "https://limpiezastorrenueva.com/og-image.jpg",
+    "image": [post.image_url || "https://limpiezastorrenueva.com/og-image.jpg"],
     "datePublished": post.created_at,
     "dateModified": post.updated_at || post.created_at,
-    "author": { "@type": "Organization", "name": "Limpiezas Torrenueva", "url": "https://limpiezastorrenueva.com" },
+    "wordCount": wordCount,
+    "timeRequired": `PT${readingTime}M`,
+    "keywords": [post.keyword_principal, post.category, ...(post.tags || [])].filter(Boolean).join(', '),
+    "articleSection": post.category,
+    "inLanguage": "es-ES",
+    "author": {
+        "@type": "Organization",
+        "name": "Limpiezas Torrenueva",
+        "url": "https://limpiezastorrenueva.com"
+    },
     "publisher": {
         "@type": "Organization",
         "name": "Limpiezas Torrenueva",
@@ -66,6 +93,16 @@ const breadcrumbSchema = {
         { "@type": "ListItem", "position": 3, "name": post.title, "item": fullUrl }
     ]
 };
+
+const faqSchema = faqs.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map(f => ({
+        "@type": "Question",
+        "name": f.question,
+        "acceptedAnswer": { "@type": "Answer", "text": f.answer }
+    }))
+} : null;
 ---
 <Layout
     title={post.meta_title || `${post.title} | Blog Limpiezas Torrenueva`}
@@ -75,44 +112,83 @@ const breadcrumbSchema = {
 >
     <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} slot="head" />
     <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} slot="head" />
+    {faqSchema && <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} slot="head" />}
 
     <main>
         <div class="post-hero">
             <img src={post.image_url || '/blog-comunidades.png'} alt={post.title} class="post-hero__image" loading="eager">
             <div class="post-hero__overlay"></div>
             <div class="container post-hero__content">
-                <nav aria-label="Migas de pan" style="margin-bottom: 1rem; font-size: 0.9rem; color: rgba(255,255,255,0.85);">
-                    <a href="/" style="color: inherit;">Inicio</a> ›
-                    <a href="/blog" style="color: inherit;">Blog</a> ›
-                    {post.category && <a href={`/blog/categoria/${post.category}`} style="color: inherit;">{post.category}</a>}
+                <nav aria-label="Migas de pan" class="breadcrumbs-light">
+                    <a href="/">Inicio</a> ›
+                    <a href="/blog">Blog</a> ›
+                    {post.category && <a href={`/blog/categoria/${post.category}`}>{post.category}</a>}
                 </nav>
                 <span class="post-tag">{post.category || post.tag || 'Blog'}</span>
                 <h1 class="post-title">{post.title}</h1>
                 <div class="post-meta">
                     <span>📅 {new Date(post.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                    <span>· ⏱ {readingTime} min lectura</span>
+                    <span>· ⏱ {readingTime} min</span>
+                    <span>· 📝 {wordCount.toLocaleString('es-ES')} palabras</span>
                 </div>
             </div>
         </div>
 
-        <section class="section-padding post-body-section">
-            <div class="container">
+        <section class="post-body-section">
+            <div class="container post-grid">
+                <aside class="post-sidebar" aria-label="Índice del artículo">
+                    {toc.length > 0 && (
+                        <div class="toc-card">
+                            <h2 class="toc-title">Contenidos</h2>
+                            <nav>
+                                <ol class="toc-list">
+                                    {toc.map(item => (
+                                        <li class={`toc-item toc-item--h${item.level}`}>
+                                            <a href={`#${item.id}`}>{item.text}</a>
+                                        </li>
+                                    ))}
+                                </ol>
+                            </nav>
+                        </div>
+                    )}
+
+                    <div class="sidebar-cta">
+                        <h3>¿Te ayudamos?</h3>
+                        <p>Presupuesto sin compromiso en 24h.</p>
+                        <a href="tel:+34604438618" class="sidebar-cta__btn">☎ 604 438 618</a>
+                        <a href="/calculadora-presupuesto" class="sidebar-cta__btn sidebar-cta__btn--outline">Calcular online</a>
+                    </div>
+
+                    {internalLinks.length > 0 && (
+                        <div class="sidebar-links">
+                            <h3>Te puede interesar</h3>
+                            <ul>
+                                {internalLinks.map(link => (
+                                    <li><a href={link.url}>{link.label}</a></li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </aside>
+
                 <article class="post-article">
-                    <div class="article-content" set:html={post.content} />
+                    <div class="article-content" set:html={processedHtml} />
 
                     <div class="share-bar">
                         <span class="share-label">Compartir:</span>
                         <a href={`https://wa.me/?text=${encodeURIComponent(post.title + ' ' + fullUrl)}`} target="_blank" rel="noopener" aria-label="Compartir en WhatsApp" class="share-btn share-wa">WhatsApp</a>
                         <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fullUrl)}`} target="_blank" rel="noopener" aria-label="Compartir en Facebook" class="share-btn share-fb">Facebook</a>
                         <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(post.title)}`} target="_blank" rel="noopener" aria-label="Compartir en X" class="share-btn share-tw">X</a>
+                        <a href={`mailto:?subject=${encodeURIComponent(post.title)}&body=${encodeURIComponent(fullUrl)}`} aria-label="Compartir por email" class="share-btn share-em">Email</a>
                     </div>
 
                     <div class="post-cta">
                         <h3>¿Necesitas un servicio de limpieza en Torrevieja?</h3>
-                        <p>Llámanos al 604 438 618 o pide tu presupuesto sin compromiso.</p>
-                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <p>Llámanos al 604 438 618 o calcula tu presupuesto online en 60 segundos.</p>
+                        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                             <a href="tel:+34604438618" class="button button--white">☎ 604 438 618</a>
-                            <a href="/contacto" class="button button--outline" style="border-color: white; color: white;">Pedir presupuesto</a>
+                            <a href="/calculadora-presupuesto" class="button button--outline" style="border-color: white; color: white;">Calculadora online</a>
+                            <a href="https://wa.me/34604438618" target="_blank" rel="noopener" class="button button--outline" style="border-color: white; color: white;">WhatsApp</a>
                         </div>
                     </div>
 
@@ -120,68 +196,122 @@ const breadcrumbSchema = {
                         <a href="/blog" class="button button--primary">← Volver al Blog</a>
                     </div>
                 </article>
+            </div>
 
-                {relatedPosts.length > 0 && (
+            {relatedPosts.length > 0 && (
+                <div class="container">
                     <aside class="related-posts">
-                        <h2 style="font-size: 1.5rem; color: #1e293b; margin-bottom: 1.5rem; text-align: center;">Artículos relacionados</h2>
-                        <div class="services__grid">
+                        <h2>Artículos relacionados</h2>
+                        <div class="related-grid">
                             {relatedPosts.map(rp => (
-                                <a href={`/post/${rp.slug}`} class="service-card" style="text-decoration: none; color: inherit;">
-                                    <div class="service-card__image">
-                                        <img src={rp.image_url || '/blog-comunidades.png'} alt={rp.title} loading="lazy" style="width: 100%; height: 180px; object-fit: cover;">
+                                <a href={`/post/${rp.slug}`} class="related-card">
+                                    <div class="related-card__image">
+                                        <img src={rp.image_url || '/blog-comunidades.png'} alt={rp.title} loading="lazy">
                                     </div>
-                                    <div class="service-card__content">
-                                        <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: #1e293b;">{rp.title}</h3>
-                                        <span class="link-arrow">Leer →</span>
+                                    <div class="related-card__content">
+                                        <span class="related-card__cat">{rp.category}</span>
+                                        <h3>{rp.title}</h3>
+                                        <span class="related-card__link">Leer →</span>
                                     </div>
                                 </a>
                             ))}
                         </div>
                     </aside>
-                )}
-            </div>
+                </div>
+            )}
         </section>
     </main>
 </Layout>
 
 <style>
-    .post-hero { position: relative; height: 60vh; min-height: 400px; max-height: 600px; display: flex; align-items: flex-end; color: white; overflow: hidden; }
+    .post-hero { position: relative; height: 55vh; min-height: 380px; max-height: 560px; display: flex; align-items: flex-end; color: white; overflow: hidden; }
     .post-hero__image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
     .post-hero__overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.85) 100%); z-index: 1; }
-    .post-hero__content { position: relative; z-index: 2; padding-bottom: 4rem; width: 100%; }
-    .post-tag { display: inline-block; background-color: var(--primary, #3b82f6); color: white; padding: 0.5rem 1rem; border-radius: 4px; font-weight: 600; margin-bottom: 1rem; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em; }
-    .post-title { color: white; font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.2; font-weight: 700; margin-bottom: 1rem; max-width: 900px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-    .post-meta { display: flex; gap: 0.75rem; flex-wrap: wrap; font-size: 1rem; opacity: 0.9; }
+    .post-hero__content { position: relative; z-index: 2; padding-bottom: 3rem; width: 100%; }
+    .breadcrumbs-light { margin-bottom: 1rem; font-size: 0.9rem; color: rgba(255,255,255,0.85); }
+    .breadcrumbs-light a { color: inherit; }
+    .post-tag { display: inline-block; background-color: var(--primary, #3b82f6); color: white; padding: 0.4rem 0.9rem; border-radius: 4px; font-weight: 600; margin-bottom: 0.75rem; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.05em; }
+    .post-title { color: white; font-size: clamp(1.8rem, 4vw, 3rem); line-height: 1.2; font-weight: 700; margin-bottom: 1rem; max-width: 900px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+    .post-meta { display: flex; gap: 0.5rem; flex-wrap: wrap; font-size: 0.95rem; opacity: 0.9; }
 
     .post-body-section { background-color: #f8fafc; padding: 4rem 0; }
-    .post-article { max-width: 800px; margin: 0 auto; background: white; padding: 3rem 4rem; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); }
-    .article-content { font-size: 1.125rem; line-height: 1.8; color: #334155; }
-    .article-content :global(h2) { font-size: 1.8rem; color: #1e293b; margin-top: 2.5rem; margin-bottom: 1.25rem; font-weight: 700; }
-    .article-content :global(h3) { font-size: 1.4rem; color: #1e293b; margin-top: 2rem; margin-bottom: 1rem; font-weight: 600; }
-    .article-content :global(p) { margin-bottom: 1.5rem; }
+    .post-grid { display: grid; grid-template-columns: 280px 1fr; gap: 3rem; align-items: start; max-width: 1200px; }
+
+    .post-sidebar { position: sticky; top: 100px; display: flex; flex-direction: column; gap: 1.25rem; }
+    .toc-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .toc-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 1rem; font-weight: 700; }
+    .toc-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+    .toc-item a { color: #475569; text-decoration: none; font-size: 0.9rem; line-height: 1.4; display: block; padding: 0.25rem 0; border-left: 2px solid transparent; padding-left: 0.5rem; transition: all 0.15s; }
+    .toc-item a:hover { color: #3b82f6; border-left-color: #3b82f6; }
+    .toc-item--h3 { padding-left: 1rem; font-size: 0.85rem; }
+    .toc-item--h3 a { color: #64748b; }
+
+    .sidebar-cta { background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; padding: 1.25rem; border-radius: 12px; text-align: center; }
+    .sidebar-cta h3 { color: white; font-size: 1rem; margin-bottom: 0.5rem; }
+    .sidebar-cta p { font-size: 0.85rem; opacity: 0.9; margin-bottom: 1rem; }
+    .sidebar-cta__btn { display: block; background: white; color: #1e40af; padding: 0.6rem; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 0.9rem; margin-bottom: 0.5rem; transition: all 0.15s; }
+    .sidebar-cta__btn:last-child { margin-bottom: 0; }
+    .sidebar-cta__btn--outline { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.5); }
+    .sidebar-cta__btn:hover { transform: translateY(-1px); }
+
+    .sidebar-links { background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .sidebar-links h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 0.75rem; font-weight: 700; }
+    .sidebar-links ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+    .sidebar-links a { color: #3b82f6; text-decoration: none; font-size: 0.85rem; line-height: 1.4; display: block; padding: 0.25rem 0; }
+    .sidebar-links a:hover { text-decoration: underline; }
+
+    .post-article { background: white; padding: 3rem 3.5rem; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); min-width: 0; }
+    .article-content { font-size: 1.075rem; line-height: 1.8; color: #334155; }
+    .article-content :global(h2) { font-size: 1.7rem; color: #1e293b; margin-top: 2.5rem; margin-bottom: 1.25rem; font-weight: 700; scroll-margin-top: 100px; }
+    .article-content :global(h3) { font-size: 1.3rem; color: #1e293b; margin-top: 2rem; margin-bottom: 1rem; font-weight: 600; scroll-margin-top: 100px; }
+    .article-content :global(p) { margin-bottom: 1.4rem; }
     .article-content :global(ul), .article-content :global(ol) { margin-bottom: 1.5rem; padding-left: 1.5rem; }
     .article-content :global(li) { margin-bottom: 0.5rem; }
     .article-content :global(strong) { color: #0f172a; font-weight: 600; }
     .article-content :global(a) { color: #3b82f6; text-decoration: underline; }
-    .article-content :global(blockquote) { border-left: 4px solid #3b82f6; padding-left: 1.5rem; margin: 2rem 0; color: #475569; font-style: italic; }
+    .article-content :global(blockquote) { border-left: 4px solid #3b82f6; padding: 0.5rem 1.5rem; margin: 2rem 0; color: #475569; font-style: italic; background: #f1f5f9; border-radius: 4px; }
+    .article-content :global(table) { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+    .article-content :global(th), .article-content :global(td) { padding: 0.6rem; border: 1px solid #e2e8f0; text-align: left; }
+    .article-content :global(th) { background: #f8fafc; font-weight: 600; }
+    .article-content :global(img) { max-width: 100%; height: auto; border-radius: 8px; margin: 1.5rem 0; }
 
     .share-bar { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin: 3rem 0 2rem; padding: 1rem; background: #f8fafc; border-radius: 12px; }
-    .share-label { font-weight: 600; color: #475569; margin-right: 0.5rem; }
-    .share-btn { padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; font-size: 0.875rem; font-weight: 600; color: white; }
+    .share-label { font-weight: 600; color: #475569; margin-right: 0.5rem; font-size: 0.875rem; }
+    .share-btn { padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; font-size: 0.825rem; font-weight: 600; color: white; transition: opacity 0.15s; }
+    .share-btn:hover { opacity: 0.9; }
     .share-wa { background: #25d366; }
     .share-fb { background: #1877f2; }
     .share-tw { background: #000; }
+    .share-em { background: #64748b; }
 
-    .post-cta { background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; padding: 2.5rem; border-radius: 16px; margin: 2rem 0; }
-    .post-cta h3 { color: white; font-size: 1.4rem; margin-bottom: 0.75rem; }
-    .post-cta p { opacity: 0.9; margin-bottom: 1.5rem; }
+    .post-cta { background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; padding: 2.25rem; border-radius: 16px; margin: 2rem 0; }
+    .post-cta h3 { color: white; font-size: 1.3rem; margin-bottom: 0.5rem; }
+    .post-cta p { opacity: 0.95; margin-bottom: 1.25rem; }
 
-    .post-footer { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0; }
-    .related-posts { max-width: 1100px; margin: 4rem auto 0; }
+    .post-footer { margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid #e2e8f0; }
 
+    .related-posts { max-width: 1200px; margin: 4rem auto 0; }
+    .related-posts h2 { font-size: 1.6rem; color: #1e293b; margin-bottom: 1.75rem; text-align: center; }
+    .related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+    .related-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-decoration: none; color: inherit; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; }
+    .related-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
+    .related-card__image { aspect-ratio: 16 / 9; overflow: hidden; }
+    .related-card__image img { width: 100%; height: 100%; object-fit: cover; }
+    .related-card__content { padding: 1.25rem; }
+    .related-card__cat { font-size: 0.7rem; text-transform: uppercase; color: #3b82f6; font-weight: 700; letter-spacing: 0.05em; }
+    .related-card__content h3 { font-size: 1rem; color: #1e293b; margin: 0.5rem 0 0.75rem; line-height: 1.4; }
+    .related-card__link { font-size: 0.875rem; font-weight: 600; color: #3b82f6; }
+
+    @media (max-width: 1024px) {
+        .post-grid { grid-template-columns: 1fr; }
+        .post-sidebar { position: static; order: 2; flex-direction: column; }
+        .post-article { order: 1; padding: 2rem; }
+        .toc-card, .sidebar-cta, .sidebar-links { max-width: 700px; }
+    }
     @media (max-width: 768px) {
-        .post-article { padding: 2rem 1.5rem; }
-        .post-title { font-size: 2rem; }
-        .post-hero { height: 50vh; }
+        .post-article { padding: 1.5rem; }
+        .post-title { font-size: 1.7rem; }
+        .post-hero { height: 45vh; min-height: 320px; }
+        .related-grid { grid-template-columns: 1fr; }
     }
 </style>

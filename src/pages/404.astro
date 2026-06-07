@@ -1,0 +1,90 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout
+    title="Página no encontrada (404) | Limpiezas Torrenueva"
+    description="No hemos encontrado lo que buscas, pero podemos ayudarte. Ve al inicio o llámanos al 604 438 618."
+    noindex={true}
+>
+    <main class="error-main">
+        <section class="error-section">
+            <div class="container error-container">
+                <div class="error-number" aria-hidden="true">404</div>
+                <h1>No hemos encontrado esta página</h1>
+                <p>Quizá el enlace está roto o la página ya no existe. Pero no te preocupes, podemos ayudarte a encontrar lo que buscas.</p>
+
+                <div class="error-actions">
+                    <a href="/" class="button button--primary">Ir al inicio</a>
+                    <a href="/contacto" class="button button--outline">Contactar</a>
+                    <a href="tel:+34604438618" class="button button--outline">☎ Llamar 604 438 618</a>
+                </div>
+
+                <div class="error-suggestions">
+                    <h2>Páginas más visitadas</h2>
+                    <div class="error-grid">
+                        <a href="/servicios" class="error-link">
+                            <strong>Nuestros servicios</strong>
+                            <span>Limpieza de comunidades, garajes, oficinas e industrial</span>
+                        </a>
+                        <a href="/zonas" class="error-link">
+                            <strong>Zonas de servicio</strong>
+                            <span>Torrevieja, Orihuela Costa, Guardamar y toda la Vega Baja</span>
+                        </a>
+                        <a href="/calculadora-presupuesto" class="error-link">
+                            <strong>Calculadora de presupuesto</strong>
+                            <span>Tu presupuesto orientativo en 60 segundos</span>
+                        </a>
+                        <a href="/blog" class="error-link">
+                            <strong>Blog</strong>
+                            <span>Consejos y guías de limpieza profesional</span>
+                        </a>
+                        <a href="/maquinaria" class="error-link">
+                            <strong>Maquinaria</strong>
+                            <span>Fregadoras, barredoras y equipos profesionales</span>
+                        </a>
+                        <a href="/faq" class="error-link">
+                            <strong>Preguntas frecuentes</strong>
+                            <span>Resolvemos las dudas más comunes</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</Layout>
+
+<style>
+    .error-main { background: #f8fafc; }
+    .error-section { padding: 5rem 0; }
+    .error-container { max-width: 900px; text-align: center; }
+    .error-number {
+        font-size: clamp(7rem, 18vw, 12rem);
+        font-weight: 900;
+        line-height: 1;
+        background: linear-gradient(135deg, #3b82f6, #1e40af);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        margin-bottom: 1rem;
+    }
+    .error-container h1 { font-size: clamp(1.5rem, 4vw, 2.4rem); color: #1e293b; margin-bottom: 1rem; }
+    .error-container > p { color: #64748b; font-size: 1.1rem; max-width: 600px; margin: 0 auto 2.5rem; }
+    .error-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-bottom: 4rem; }
+    .error-suggestions { margin-top: 3rem; }
+    .error-suggestions h2 { font-size: 1.2rem; color: #1e293b; margin-bottom: 1.5rem; }
+    .error-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; max-width: 800px; margin: 0 auto; }
+    .error-link {
+        display: block;
+        background: white;
+        padding: 1.25rem 1.5rem;
+        border-radius: 12px;
+        text-decoration: none;
+        color: inherit;
+        border: 1px solid #e2e8f0;
+        text-align: left;
+        transition: all 0.2s;
+    }
+    .error-link:hover { border-color: #3b82f6; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.05); }
+    .error-link strong { display: block; color: #1e293b; margin-bottom: 0.25rem; }
+    .error-link span { font-size: 0.875rem; color: #64748b; }
+</style>
