@@ -66,10 +66,7 @@ const GA_ID = import.meta.env.PUBLIC_GA_MEASUREMENT_ID || '';
     <meta name="twitter:description" content={description}>
     <meta name="twitter:image" content={ogImageURL}>
 
-    <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
-    <link rel="dns-prefetch" href="https://images.unsplash.com">
-
-    <script type="application/ld+json" set:html={JSON.stringify({
+<script type="application/ld+json" set:html={JSON.stringify({
         "@context": "https://schema.org",
         "@type": "CleaningService",
         "@id": "https://limpiezastorrenueva.com/#cleaningservice",
@@ -270,6 +267,56 @@ const GA_ID = import.meta.env.PUBLIC_GA_MEASUREMENT_ID || '';
         outline: 3px solid #3b82f6;
         outline-offset: 2px;
         border-radius: 4px;
+    }
+
+    @media (max-width: 1024px) {
+        .nav { display: none; }
+        .nav.nav--open {
+            display: flex !important;
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 88%;
+            max-width: 360px;
+            background: white;
+            flex-direction: column;
+            padding: 5rem 1.5rem 2rem;
+            box-shadow: -8px 0 30px rgba(0,0,0,0.15);
+            z-index: 200;
+            overflow-y: auto;
+            animation: slide-in-nav 0.25s ease-out;
+        }
+        .nav.nav--open .nav__list {
+            flex-direction: column;
+            gap: 0.25rem;
+            width: 100%;
+        }
+        .nav.nav--open .nav__item { width: 100%; }
+        .nav.nav--open .nav__link {
+            display: block;
+            padding: 1rem 1.25rem;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            color: #1e293b;
+        }
+        .nav.nav--open .nav__link:hover { background: #f1f5f9; }
+        .nav.nav--open::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: -1;
+        }
+        .menu-toggle { display: flex; flex-direction: column; gap: 5px; background: transparent; border: none; cursor: pointer; padding: 0.5rem; z-index: 250; position: relative; }
+        .menu-toggle__line { display: block; width: 26px; height: 2px; background: #1e293b; border-radius: 2px; transition: transform 0.2s; }
+    }
+    @media (min-width: 1025px) {
+        .menu-toggle { display: none; }
+    }
+    @keyframes slide-in-nav {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
     }
 
     @media (prefers-reduced-motion: reduce) {

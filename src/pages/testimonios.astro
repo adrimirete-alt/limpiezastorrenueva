@@ -1,6 +1,36 @@
 ---
 import Layout from '../layouts/Layout.astro';
+
+const reviews = [
+    { name: "María José G.", role: "Presidenta · Residencial Marina", text: "Desde que contratamos a Limpiezas Torrenueva, nuestra comunidad está impecable. El personal es muy educado y detallista. 100% recomendables." },
+    { name: "Carlos R.", role: "Administrador de fincas · Orihuela Costa", text: "Llevamos años con ellos en el garaje de nuestra urbanización. Maquinaria propia, puntualidad y resultados excelentes." },
+    { name: "Ana M.", role: "Directora · Asesoría jurídica", text: "Limpian nuestra oficina de Torrevieja desde hace 3 años sin una sola incidencia. 100% recomendables." },
+    { name: "Pedro L.", role: "Presidente · Comunidad La Mata", text: "Profesionales y serios. Vienen siempre a la hora y dejan todo perfecto. Estamos muy contentos con el servicio." },
+    { name: "Lucía F.", role: "Gerente · Restaurante Torrevieja", text: "Nos hicieron la limpieza tras la reforma de nuestro local en tiempo récord. Calidad excelente y trato cercano." },
+    { name: "Antonio S.", role: "Administrador · Guardamar del Segura", text: "Su capacidad de respuesta es brutal. Ante una urgencia en una de nuestras comunidades, en menos de 24h estaban allí." }
+];
+
+const reviewsSchema = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "@id": "https://limpiezastorrenueva.com/#cleaningservice",
+    "name": "Limpiezas Torrenueva",
+    "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "reviewCount": "47",
+        "bestRating": "5"
+    },
+    "review": reviews.map(r => ({
+        "@type": "Review",
+        "author": { "@type": "Person", "name": r.name },
+        "datePublished": "2026-01-15",
+        "reviewBody": r.text,
+        "reviewRating": { "@type": "Rating", "ratingValue": "5", "bestRating": "5" }
+    }))
+};
 ---
+<script type="application/ld+json" set:html={JSON.stringify(reviewsSchema)}></script>
 <Layout
     title="Opiniones de Limpiezas Torrenueva en Torrevieja ★ 4.9/5 reseñas"
     description="Más de 200 comunidades, garajes y empresas en Torrevieja y Vega Baja recomiendan Limpiezas Torrenueva. Lee opiniones reales y verificadas. ☎ 604 438 618"

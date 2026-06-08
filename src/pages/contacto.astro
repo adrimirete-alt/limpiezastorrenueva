@@ -1,19 +1,17 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { localidades } from '../data/localidades.js';
 ---
-<Layout title="Contacto | Empresa de Limpieza en Torrevieja | Limpiezas Torrenueva" description="Contacte con su empresa de limpiezas en Torrevieja al +34 604 438 618. Presupuesto sin compromiso para limpieza de comunidades y garajes.">
+<Layout title="Contacto | Empresa de Limpieza en Torrevieja | Limpiezas Torrenueva" description="Contacta con tu empresa de limpiezas en Torrevieja al +34 604 438 618. Presupuesto sin compromiso para limpieza de comunidades, garajes, oficinas y limpieza industrial.">
     <main>
-        <!-- Page Hero -->
         <section class="page-hero">
             <div class="page-hero__bg">
-                <img src="https://images.unsplash.com/photo-1423666639041-f14d07295df5?q=80&w=2074&auto=format&fit=crop"
-                    alt="Contacto Limpiezas Torrenueva" class="page-hero__img">
+                <img src="/hero-bg.jpg" alt="Contacto Limpiezas Torrenueva en Torrevieja" class="page-hero__img" loading="eager">
             </div>
             <div class="page-hero__overlay"></div>
             <div class="container page-hero__content">
-                <h1 class="page-hero__title">Contacte con Nosotros</h1>
-                <p class="page-hero__subtitle">Estamos a su disposición para resolver cualquier duda o necesidad de
-                    limpieza.</p>
+                <h1 class="page-hero__title">Contacta con tu empresa de limpieza en Torrevieja</h1>
+                <p class="page-hero__subtitle">Presupuesto sin compromiso en 24 horas. Limpieza de comunidades, garajes, oficinas e industrial en Torrevieja y Vega Baja.</p>
             </div>
         </section>
 
@@ -21,49 +19,114 @@ import Layout from '../layouts/Layout.astro';
             <div class="container grid grid--2-cols contact-grid">
                 <div class="contact__info">
                     <span class="section-tag">Contacto</span>
-                    <h2 class="section-title">Solicite su Presupuesto</h2>
-                    <p class="text-body">Cuéntenos qué necesita y elaboraremos un plan de limpieza a medida sin ningún
-                        compromiso.</p>
+                    <h2 class="section-title">Solicita tu presupuesto</h2>
+                    <p class="text-body">Cuéntanos qué necesitas y elaboraremos un plan a medida sin compromiso. Respuesta garantizada en menos de 24 horas.</p>
 
                     <div class="contact__details">
                         <div class="contact__item">
-                            <h3>Email</h3>
-                            <a href="mailto:info@limpiezastorrenueva.com"><svg class="top-bar-icon" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg> info@limpiezastorrenueva.com</a>
+                            <h3>📞 Teléfono directo</h3>
+                            <a href="tel:+34604438618" style="font-size: 1.4rem; font-weight: 700; color: #3b82f6;">604 438 618</a>
                         </div>
                         <div class="contact__item">
-                            <h3>Teléfono</h3>
-                            <a href="tel:+34604438618">+34 604 438 618</a>
+                            <h3>✉ Email</h3>
+                            <a href="mailto:info@limpiezastorrenueva.com">info@limpiezastorrenueva.com</a>
                         </div>
                         <div class="contact__item">
-                            <h3>Horario</h3>
-                            <p>Lunes a Viernes: 9:00 - 18:00</p>
+                            <h3>💬 WhatsApp</h3>
+                            <a href="https://wa.me/34604438618?text=Hola%2C%20necesito%20presupuesto%20de%20limpieza" target="_blank" rel="noopener">Chat directo por WhatsApp →</a>
+                        </div>
+                        <div class="contact__item">
+                            <h3>🕐 Horario</h3>
+                            <p>Lun-Vie: 8:00 - 19:00 · Sáb: 9:00 - 14:00</p>
                         </div>
                     </div>
                 </div>
+
                 <div class="contact__form-wrapper">
-                    <!-- Updated with Formspree Action ID provided -->
-                    <form class="contact-form" action="https://formspree.io/f/mjgwnrdb" method="POST">
+                    <form class="contact-form" id="contactLeadForm" novalidate>
                         <div class="form-group">
-                            <label for="name">Nombre</label>
-                            <input type="text" id="name" name="nombre" placeholder="Su nombre" required>
+                            <label for="nombre">Nombre *</label>
+                            <input type="text" id="nombre" name="nombre" placeholder="Tu nombre" required aria-required="true">
                         </div>
                         <div class="form-group">
-                            <label for="email">Email</label>
-                            <input type="email" id="email" name="email" placeholder="nombre@empresa.com" required>
+                            <label for="email">Email *</label>
+                            <input type="email" id="email" name="email" placeholder="nombre@empresa.com" required aria-required="true">
                         </div>
                         <div class="form-group">
-                            <label for="phone">Teléfono (Opcional)</label>
-                            <input type="tel" id="phone" name="telefono" placeholder="Su teléfono">
+                            <label for="telefono">Teléfono</label>
+                            <input type="tel" id="telefono" name="telefono" placeholder="604 438 618">
+                        </div>
+                        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                            <div>
+                                <label for="tipo_propiedad">Tipo</label>
+                                <select id="tipo_propiedad" name="tipo_propiedad">
+                                    <option value="">Selecciona…</option>
+                                    <option value="comunidad">Comunidad</option>
+                                    <option value="oficina">Oficina</option>
+                                    <option value="garaje">Garaje</option>
+                                    <option value="industrial">Industrial</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="localidad">Localidad</label>
+                                <select id="localidad" name="localidad">
+                                    <option value="">Selecciona…</option>
+                                    {localidades.map(l => <option value={l.nombre}>{l.nombre}</option>)}
+                                </select>
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label for="message">Mensaje</label>
-                            <textarea id="message" name="mensaje" rows="4" placeholder="Detalles del servicio que necesita..."
-                                required></textarea>
+                            <label for="mensaje">Mensaje *</label>
+                            <textarea id="mensaje" name="mensaje" rows="4" placeholder="Cuéntanos qué necesitas..." required aria-required="true"></textarea>
                         </div>
-                        <button type="submit" class="button button--primary full-width">Enviar Mensaje</button>
+                        <div style="position: absolute; left: -9999px;" aria-hidden="true">
+                            <input type="text" name="website" tabindex="-1" autocomplete="off">
+                        </div>
+                        <label class="form-check" style="display: flex; gap: 0.5rem; align-items: flex-start; font-size: 0.85rem; color: #475569; margin-bottom: 0.75rem;">
+                            <input type="checkbox" name="consent_rgpd" required aria-required="true" style="margin-top: 0.25rem;">
+                            <span>Acepto la <a href="/privacidad" target="_blank">política de privacidad</a>. *</span>
+                        </label>
+                        <label class="form-check" style="display: flex; gap: 0.5rem; align-items: flex-start; font-size: 0.85rem; color: #475569; margin-bottom: 1rem;">
+                            <input type="checkbox" name="consent_marketing" style="margin-top: 0.25rem;">
+                            <span>Acepto recibir info comercial de Limpiezas Torrenueva (opcional).</span>
+                        </label>
+                        <button type="submit" class="button button--primary full-width" id="contactLeadSubmit">Enviar mensaje</button>
+                        <div id="contactLeadStatus" class="form-status" role="status" aria-live="polite" style="margin-top: 1rem;"></div>
                     </form>
                 </div>
             </div>
         </section>
     </main>
+
+    <script>
+        const form = document.getElementById('contactLeadForm');
+        if (form) {
+            const status = document.getElementById('contactLeadStatus');
+            const btn = document.getElementById('contactLeadSubmit');
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (form.website && form.website.value) return;
+                if (!form.checkValidity()) { form.reportValidity(); return; }
+                btn.disabled = true;
+                btn.textContent = 'Enviando…';
+                const data = Object.fromEntries(new FormData(form));
+                data.consent_rgpd = form.querySelector('[name="consent_rgpd"]').checked;
+                data.consent_marketing = form.querySelector('[name="consent_marketing"]').checked;
+                data.fuente = 'contacto';
+                try {
+                    const res = await fetch('/api/lead', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data) });
+                    const json = await res.json();
+                    if (!res.ok) throw new Error(json.error || 'Error');
+                    form.style.display = 'none';
+                    status.innerHTML = '<div style="background:#d1fae5;color:#065f46;padding:1.25rem;border-radius:12px;text-align:center;"><strong>✓ Mensaje enviado correctamente.</strong><br>Te llamaremos en menos de 24 horas.</div>';
+                    if (window.gtag) gtag('event', 'lead_form_submitted', { source: 'contacto' });
+                } catch (err) {
+                    status.innerHTML = `<div style="background:#fef2f2;color:#dc2626;padding:1rem;border-radius:8px;">Error: ${err.message}. Llámanos al 604 438 618.</div>`;
+                    btn.disabled = false;
+                    btn.textContent = 'Enviar mensaje';
+                }
+            });
+        }
+    </script>
 </Layout>
