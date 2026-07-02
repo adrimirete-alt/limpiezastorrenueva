@@ -476,14 +476,15 @@ h4 {
 
 .reveal-text {
     display: block;
-    transform: translateY(100%);
+    transform: translateY(0);
+    /* GSAP overrides this on load; fallback ensures text visible without JS */
 }
 
 .hero__subtitle {
     font-size: clamp(1rem, 1.5vw, 1.25rem);
     max-width: 650px;
     margin-bottom: 3rem;
-    opacity: 0;
+    opacity: 1;
     line-height: 1.6;
     color: #cbd5e1;
     /* Using a clean slate grey/white */
