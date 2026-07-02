@@ -1,5 +1,11 @@
 {
     "redirects": [
+        {
+            "source": "/:path*",
+            "has": [{ "type": "host", "value": "limpiezastorrenueva.com" }],
+            "destination": "https://www.limpiezastorrenueva.com/:path*",
+            "permanent": true
+        },
         { "source": "/maquinas", "destination": "/maquinaria", "permanent": true }
     ],
     "headers": [
