@@ -4,13 +4,13 @@
     ],
     "headers": [
         {
-            "source": "/(.*\\.(jpg|jpeg|png|webp|avif|svg|ico|woff|woff2|ttf))",
+            "source": "/:path*.:ext(jpg|jpeg|png|webp|avif|svg|ico|woff|woff2|ttf)",
             "headers": [
                 { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
             ]
         },
         {
-            "source": "/sitemap-(.*)\\.xml",
+            "source": "/:sitemap(sitemap-.*).xml",
             "headers": [
                 { "key": "Cache-Control", "value": "public, max-age=3600" },
                 { "key": "Content-Type", "value": "application/xml" }
